@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Close or Keep",
+  "version": "2.0.0",
+  "description": "Decide which tabs to keep or close in a card-based interface",
+  "permissions": [
+    "tabs",
+    "windows",
+    "storage",
+    "scripting"
+  ],
+  "background": {
+    "service_worker": "src/background/service-worker.js"
+  },
+  "action": {
+    "default_popup": "src/main/index.html",
+    "default_title": "Close or Keep"
+  }
+}
