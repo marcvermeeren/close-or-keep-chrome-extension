@@ -1,5 +1,7 @@
 # Close or Keep
 
+![Close or Keep Extension](assets/images/closeorkeep.png)
+
 A Chrome extension that helps you declutter your browser tabs through a simple, card-based interface. Decide which tabs to keep and which to close with ease.
 
 ## Features
@@ -84,7 +86,7 @@ No build process required - this is a vanilla JavaScript extension.
 
 ## License
 
-[Add your chosen license here]
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Support
 
