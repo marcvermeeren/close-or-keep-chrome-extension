@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Close or Keep",
-  "version": "2.0.0",
-  "description": "Decide which tabs to keep or close in a card-based interface",
+  "version": "1.0",
+  "description": "Close or Keep is a simple Chrome extension that helps you declutter your browser. That's it. Nothing fancy, just a clean browser for a clear mind.",
   "permissions": [
     "tabs",
     "windows",

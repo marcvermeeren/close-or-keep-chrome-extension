@@ -1,63 +1,78 @@
 // main.js - Main interface for Close or Keep extension
 
-var processed = [];
-var current = null;
+let processed = [];
+let current = null;
+let eventListenersAttached = false;
 
 /**
  * Load the in-memory processed list
  */
-function loadProcessed(callback) {
-  chrome.runtime.sendMessage({ type: 'getProcessed' }, function(response) {
-    processed = response.processed || [];
+const loadProcessed = (callback) => {
+  chrome.runtime.sendMessage({ type: 'getProcessed' }, (response) => {
+    if (chrome.runtime.lastError) {
+      console.error('Error loading processed tabs:', chrome.runtime.lastError);
+      processed = [];
+    } else {
+      processed = response.processed || [];
+    }
     callback();
   });
-}
+};
 
 /**
  * Fetch next unseen HTTP(S) tab, with active first on fresh open
+ * Optimized to use a single query for better performance
  */
-function fetchNextTab(callback) {
-  chrome.tabs.query({ currentWindow: true }, function(tabs) {
-    var pages = tabs.filter(function(tab) {
+const fetchNextTab = (callback) => {
+  chrome.tabs.query({ currentWindow: true }, (tabs) => {
+    if (chrome.runtime.lastError) {
+      console.error('Error fetching tabs:', chrome.runtime.lastError);
+      callback(null);
+      return;
+    }
+
+    // Filter and sort tabs
+    const pages = tabs.filter((tab) => {
       // Only include HTTP/HTTPS tabs, exclude chrome://, chrome-extension://, etc.
       return /^https?:/.test(tab.url) && !tab.url.startsWith('chrome://');
-    }).sort(function(a, b) {
-      return b.lastAccessed - a.lastAccessed;
-    });
+    }).sort((a, b) => b.lastAccessed - a.lastAccessed);
 
+    // On fresh session, prioritize active tab
     if (processed.length === 0) {
-      chrome.tabs.query({ active: true, currentWindow: true }, function(actTabs) {
-        var act = actTabs[0];
-        pages = [act].concat(pages.filter(function(tab) {
-          return tab.id !== act.id;
-        }));
-        callback(pages.find(function(tab) {
-          return !processed.includes(tab.id);
-        }) || null);
-      });
-    } else {
-      callback(pages.find(function(tab) {
-        return !processed.includes(tab.id);
-      }) || null);
+      const activeTab = tabs.find(tab => tab.active);
+      if (activeTab && /^https?:/.test(activeTab.url)) {
+        const reorderedPages = [activeTab].concat(
+          pages.filter(tab => tab.id !== activeTab.id)
+        );
+        callback(reorderedPages.find(tab => !processed.includes(tab.id)) || null);
+        return;
+      }
     }
+
+    callback(pages.find(tab => !processed.includes(tab.id)) || null);
   });
-}
+};
 
 /**
  * Render the next card
  */
-function renderNext() {
-  fetchNextTab(function(tab) {
-    var card = document.querySelector('.tab-card');
-    var actions = document.querySelector('.actions');
+const renderNext = () => {
+  fetchNextTab((tab) => {
+    const card = document.querySelector('.tab-card');
+    const actions = document.querySelector('.actions');
 
-    // Clear previous
-    var imgContainer = card.querySelector('.tab-image');
-    var titleEl = card.querySelector('.tab-title');
-    var urlEl = card.querySelector('.tab-url');
-    imgContainer.innerHTML = '';
-    titleEl.textContent = '';
-    urlEl.textContent = '';
+    if (!card || !actions) {
+      console.error('Required DOM elements not found');
+      return;
+    }
+
+    // Clear previous content
+    const imgContainer = card.querySelector('.tab-image');
+    const titleEl = card.querySelector('.tab-title');
+    const urlEl = card.querySelector('.tab-url');
+    if (imgContainer) imgContainer.innerHTML = '';
+    if (titleEl) titleEl.textContent = '';
+    if (urlEl) urlEl.textContent = '';
     actions.style.display = 'flex';
 
     if (!tab) {
@@ -81,10 +96,10 @@ function renderNext() {
     // Restore original action buttons if they were replaced
     if (!document.getElementById('keep-btn')) {
       actions.innerHTML = `
-        <button id="remove-btn" class="action-btn" title="Close tab (X, Delete, or R)">
+        <button id="remove-btn" class="action-btn" title="Close tab (R)">
           <img src="../../assets/icons/close.svg" alt="Close">
         </button>
-        <button id="keep-btn" class="action-btn" title="Keep tab (Space, Enter, or K)">
+        <button id="keep-btn" class="action-btn" title="Keep tab (K)">
           <img src="../../assets/icons/keep.svg" alt="Keep">
         </button>
       `;
@@ -136,9 +151,17 @@ function renderNext() {
     
     // Add click-to-navigate functionality
     card.style.cursor = 'pointer';
-    card.onclick = function() {
-      chrome.tabs.update(current.id, { active: true }, function() {
-        chrome.windows.update(current.windowId, { focused: true });
+    card.onclick = () => {
+      chrome.tabs.update(current.id, { active: true }, () => {
+        if (chrome.runtime.lastError) {
+          console.error('Error switching to tab:', chrome.runtime.lastError);
+          return;
+        }
+        chrome.windows.update(current.windowId, { focused: true }, () => {
+          if (chrome.runtime.lastError) {
+            console.error('Error focusing window:', chrome.runtime.lastError);
+          }
+        });
       });
     };
     
@@ -188,27 +211,35 @@ function handleKeyPress(event) {
 /**
  * Keep action
  */
-function keepTab() {
+const keepTab = () => {
   if (!current) return;
   chrome.runtime.sendMessage({
     type: 'keep',
     tabId: current.id
-  }, function(response) {
+  }, (response) => {
+    if (chrome.runtime.lastError) {
+      console.error('Error keeping tab:', chrome.runtime.lastError);
+      return;
+    }
     processed = response.processed;
     renderNext();
   });
-}
+};
 
 /**
  * Remove action
  */
-function removeTab() {
+const removeTab = () => {
   if (!current) return;
   chrome.runtime.sendMessage({
     type: 'remove',
     tabId: current.id
+  }, () => {
+    if (chrome.runtime.lastError) {
+      console.error('Error removing tab:', chrome.runtime.lastError);
+    }
   });
-}
+};
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', function() {

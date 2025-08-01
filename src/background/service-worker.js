@@ -21,11 +21,12 @@ let processed = [];
  */
 function safeRemove(tabId, callback) {
   chrome.tabs.get(tabId, () => {
-    if (!chrome.runtime.lastError) {
-      chrome.tabs.remove(tabId, callback);
-    } else {
+    if (chrome.runtime.lastError) {
+      console.error('Error getting tab:', chrome.runtime.lastError);
       callback();
+      return;
     }
+    chrome.tabs.remove(tabId, callback);
   });
 }
 
@@ -50,11 +51,23 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       processed.push(msg.tabId);
       // Mark that the next popup open is an auto-reopen
       chrome.storage.local.set({ [STORAGE_KEYS.AUTO_REOPEN]: true }, () => {
+        if (chrome.runtime.lastError) {
+          console.error('Error setting storage:', chrome.runtime.lastError);
+          return;
+        }
         safeRemove(msg.tabId, () => {
           // Focus on the last-focused window, then reopen popup
           chrome.windows.getLastFocused({ populate: false }, (win) => {
+            if (chrome.runtime.lastError) {
+              console.error('Error getting last window:', chrome.runtime.lastError);
+              chrome.action.openPopup();
+              return;
+            }
             if (win && win.id) {
               chrome.windows.update(win.id, { focused: true }, () => {
+                if (chrome.runtime.lastError) {
+                  console.error('Error focusing window:', chrome.runtime.lastError);
+                }
                 chrome.action.openPopup();
               });
             } else {

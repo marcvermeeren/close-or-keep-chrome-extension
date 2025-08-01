@@ -2,8 +2,6 @@
 
 ![Close or Keep Extension](assets/images/closeorkeep.png)
 
-A Chrome extension that helps you declutter your browser tabs through a simple, card-based interface. Decide which tabs to keep and which to close with ease.
-
 ## Features
 
 - **Card-based Interface**: View tabs one at a time with their favicon, title, and URL
@@ -72,6 +70,8 @@ tab-swiper/
         ├── keep.svg
         ├── keyboard.svg
         └── share.svg
+    └── images/
+        ├── closeorkeep.png
 ```
 
 ### Building
