@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Close or Keep",
-  "version": "1.0",
+  "version": "1.01",
   "description": "Simple Chrome extension to declutter your browser. Nothing fancy, just a clean browser for a clear mind.",
   "permissions": [
     "tabs",

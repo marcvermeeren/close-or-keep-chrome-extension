@@ -96,7 +96,7 @@ const renderNext = () => {
     // Restore original action buttons if they were replaced
     if (!document.getElementById('keep-btn')) {
       actions.innerHTML = `
-        <button id="remove-btn" class="action-btn" title="Close tab (R)">
+        <button id="remove-btn" class="action-btn" title="Close tab (C)">
           <img src="../../assets/icons/close.svg" alt="Close">
         </button>
         <button id="keep-btn" class="action-btn" title="Keep tab (K)">
@@ -184,7 +184,7 @@ function addKeyboardShortcuts() {
     <div class="keyboard-icon">
       <img src="../../assets/icons/keyboard.svg" alt="Keyboard">
     </div>
-    <span>R = Remove&nbsp;&nbsp;&nbsp;K = Keep</span>
+    <span>C = Close&nbsp;&nbsp;&nbsp;K = Keep</span>
   `;
   
   var actions = document.querySelector('.actions');
@@ -199,7 +199,7 @@ function handleKeyPress(event) {
   
   var key = event.key.toLowerCase();
   
-  if (key === 'r') {
+  if (key === 'c') {
     event.preventDefault();
     removeTab();
   } else if (key === 'k') {
